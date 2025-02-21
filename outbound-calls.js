@@ -3,8 +3,8 @@ import Twilio from "twilio";
 
 export function registerOutboundRoutes(fastify) {
   // Check for required environment variables
-  const { 
-    ELEVENLABS_API_KEY, 
+  const {
+    ELEVENLABS_API_KEY,
     ELEVENLABS_AGENT_ID,
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
@@ -46,7 +46,7 @@ export function registerOutboundRoutes(fastify) {
 
   // Route to initiate outbound calls
   fastify.post("/outbound-call", async (request, reply) => {
-    const { number, prompt } = request.body;
+    const { number, prompt, lead_id } = request.body;
 
     if (!number) {
       return reply.code(400).send({ error: "Phone number is required" });
@@ -56,19 +56,19 @@ export function registerOutboundRoutes(fastify) {
       const call = await twilioClient.calls.create({
         from: TWILIO_PHONE_NUMBER,
         to: number,
-        url: `https://${request.headers.host}/outbound-call-twiml?prompt=${encodeURIComponent(prompt)}`
+        url: `https://${request.headers.host}/outbound-call-twiml?prompt=${encodeURIComponent(prompt)}&lead_id=${encodeURIComponent(lead_id)}`
       });
 
-      reply.send({ 
-        success: true, 
-        message: "Call initiated", 
-        callSid: call.sid 
+      reply.send({
+        success: true,
+        message: "Call initiated",
+        callSid: call.sid
       });
     } catch (error) {
       console.error("Error initiating outbound call:", error);
-      reply.code(500).send({ 
-        success: false, 
-        error: "Failed to initiate call" 
+      reply.code(500).send({
+        success: false,
+        error: "Failed to initiate call"
       });
     }
   });
@@ -76,12 +76,16 @@ export function registerOutboundRoutes(fastify) {
   // TwiML route for outbound calls
   fastify.all("/outbound-call-twiml", async (request, reply) => {
     const prompt = request.query.prompt || '';
+    const name = request.query.name || '';
+    const lead_id = request.query.lead_id || '';
 
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
       <Response>
         <Connect>
           <Stream url="wss://${request.headers.host}/outbound-media-stream">
             <Parameter name="prompt" value="${prompt}" />
+            <Parameter name="name" value="${name}" />
+            <Parameter name="lead_id" value="${lead_id}" />
           </Stream>
         </Connect>
       </Response>`;
@@ -115,10 +119,14 @@ export function registerOutboundRoutes(fastify) {
             // Send initial configuration with prompt and first message
             const initialConfig = {
               type: "conversation_initiation_client_data",
+              dynamic_variables: {
+                "name": customParameters?.name || "",
+                "lead_id": customParameters?.lead_id || ""
+              },
               conversation_config_override: {
                 agent: {
                   prompt: { prompt: customParameters?.prompt || "you are a gary from the phone store" },
-                  first_message: "hey there! how can I help you today?",
+                  first_message: "",
                 },
               }
             };
@@ -166,9 +174,9 @@ export function registerOutboundRoutes(fastify) {
 
                 case "interruption":
                   if (streamSid) {
-                    ws.send(JSON.stringify({ 
+                    ws.send(JSON.stringify({
                       event: "clear",
-                      streamSid 
+                      streamSid
                     }));
                   }
                   break;
