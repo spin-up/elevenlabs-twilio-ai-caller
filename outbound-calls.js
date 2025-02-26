@@ -76,7 +76,8 @@ export function registerOutboundRoutes(fastify) {
   // TwiML route for outbound calls
   fastify.all("/outbound-call-twiml", async (request, reply) => {
     const prompt = request.query.prompt || '';
-    const name = request.query.name || '';
+    const first_name = request.query.first_name || '';
+    const last_name = request.query.last_name || '';
     const lead_id = request.query.lead_id || '';
 
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
