@@ -122,7 +122,8 @@ export function registerOutboundRoutes(fastify) {
             const initialConfig = {
               type: "conversation_initiation_client_data",
               dynamic_variables: {
-                "name": customParameters?.name || "",
+                "first_name": customParameters?.first_name || "",
+                "last_name": customParameters?.last_name || "",
                 "lead_id": customParameters?.lead_id || ""
               },
               conversation_config_override: {
