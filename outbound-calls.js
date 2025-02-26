@@ -46,7 +46,7 @@ export function registerOutboundRoutes(fastify) {
 
   // Route to initiate outbound calls
   fastify.post("/outbound-call", async (request, reply) => {
-    const { number, prompt, lead_id, name } = request.body;
+    const { number, prompt, lead_id, first_name, last_name } = request.body;
 
     if (!number) {
       return reply.code(400).send({ error: "Phone number is required" });
@@ -56,7 +56,7 @@ export function registerOutboundRoutes(fastify) {
       const call = await twilioClient.calls.create({
         from: TWILIO_PHONE_NUMBER,
         to: number,
-        url: `https://${request.headers.host}/outbound-call-twiml?prompt=${encodeURIComponent(prompt)}&lead_id=${encodeURIComponent(lead_id)}&name=${encodeURIComponent(name)}`
+        url: `https://${request.headers.host}/outbound-call-twiml?prompt=${encodeURIComponent(prompt)}&lead_id=${encodeURIComponent(lead_id)}&first_name=${encodeURIComponent(first_name)}&last_name=${encodeURIComponent(last_name)}`
       });
 
       reply.send({
@@ -84,7 +84,8 @@ export function registerOutboundRoutes(fastify) {
         <Connect>
           <Stream url="wss://${request.headers.host}/outbound-media-stream">
             <Parameter name="prompt" value="${prompt}" />
-            <Parameter name="name" value="${name}" />
+            <Parameter name="first_name" value="${first_name}" />
+            <Parameter name="last_name" value="${last_name}" />
             <Parameter name="lead_id" value="${lead_id}" />
           </Stream>
         </Connect>
